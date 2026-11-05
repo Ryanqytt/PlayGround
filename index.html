@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#dbe7d3" />
+    <meta name="description" content="Kaze no Tori — a hand-painted flight fable. Ride the wind above a valley of lost spirits." />
+    <title>Kaze no Tori — Wind of the Valley</title>
+    <link rel="stylesheet" href="./src/styles.css" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23e9e2cc'/%3E%3Cpath d='M14 38c8-12 19-18 34-20-7 6-10 10-12 16-7-2-14 0-22 4z' fill='%236a8b5a'/%3E%3Cpath d='M16 44c10-6 20-8 32-8-6 4-10 6-14 11z' fill='%23c69a62'/%3E%3C/svg%3E" />
+  </head>
+  <body>
+    <div id="app">
+      <canvas id="scene" aria-label="A bird flying above a painted valley"></canvas>
+
+      <!-- soft filmic edge for the whole experience -->
+      <div class="vignette" aria-hidden="true"></div>
+      <div class="grain" aria-hidden="true"></div>
+
+      <div id="loading" class="loading">
+        <div class="loading-feather" aria-hidden="true">
+          <svg viewBox="0 0 64 64"><path d="M9 52C18 30 36 13 57 8c-3 19-15 36-33 43-4 2-9 3-15 1Z" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M12 51C23 39 36 27 52 14" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".6"/></svg>
+        </div>
+        <p>calling the wind…</p>
+      </div>
+
+      <!-- title / start -->
+      <section id="menu" class="overlay menu">
+        <div class="menu-card">
+          <p class="eyebrow"><span>風の谷の飛行</span><i></i><span>a flight fable</span></p>
+          <h1>Kaze no Tori</h1>
+          <p class="subtitle">Wind of the Valley</p>
+          <p class="lede">
+            Nine lost wind spirits are drifting above the valley.<br />
+            Ride the warm air to find them — and wake the Elder Tree.
+          </p>
+
+          <button id="startBtn" class="btn primary" type="button">
+            <span>Begin the flight</span>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h16m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+
+          <div class="menu-controls">
+            <div class="ctrl"><span class="keys"><kbd>W</kbd><kbd>S</kbd></span><span>climb · dive</span></div>
+            <div class="ctrl"><span class="keys"><kbd>A</kbd><kbd>D</kbd></span><span>bank &amp; turn</span></div>
+            <div class="ctrl"><span class="keys"><kbd class="wide">space</kbd></span><span>beat your wings</span></div>
+            <div class="ctrl"><span class="keys"><kbd class="wide">shift</kbd></span><span>tuck &amp; dive</span></div>
+          </div>
+          <p class="footnote">Headphones recommended. Touch controls appear on phones and tablets.</p>
+        </div>
+        <div class="menu-credit">An original game · painted in light</div>
+      </section>
+
+      <!-- in-game -->
+      <div id="hud" class="hud hidden">
+        <div class="hud-top">
+          <div class="objective">
+            <span class="obj-kicker">Wind spirits</span>
+            <span class="obj-count"><b id="spiritCount">0</b><span class="slash">/</span><span id="spiritTotal">9</span></span>
+            <div class="obj-rule"><i id="objFill"></i></div>
+          </div>
+          <div class="top-right">
+            <div class="clock-wrap">
+              <span class="clock-label">flight</span>
+              <span id="clock" class="clock">00:00</span>
+            </div>
+            <button id="soundBtn" class="icon-btn" type="button" aria-label="Toggle sound" title="Sound">
+              <svg class="sound-on" viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9H4Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+              <svg class="sound-off" viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9H4Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="m16 9 5 6m0-6-5 6" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+            </button>
+            <button id="pauseBtn" class="icon-btn" type="button" aria-label="Pause" title="Pause">
+              <svg viewBox="0 0 24 24"><path d="M8 5v14M16 5v14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="guide" id="guide">
+          <span class="guide-arrow" id="guideArrow">
+            <svg viewBox="0 0 24 24"><path d="M12 21V4m0 0L5 11m7-7 7 7" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </span>
+          <span class="guide-text"><b id="guideName">the nearest spirit</b><em id="guideDist">—</em></span>
+        </div>
+
+        <div class="hud-bottom">
+          <div class="wind-meter">
+            <div class="wind-label"><span>Wind</span><span id="windPct">100</span></div>
+            <div class="wind-track"><i id="windFill"></i></div>
+            <p class="wind-hint" id="windHint">gliding restores your wind</p>
+          </div>
+          <div class="readouts">
+            <div><span class="ro-label">alt</span><span id="altitude">—</span><small>m</small></div>
+            <div><span class="ro-label">speed</span><span id="airspeed">—</span><small>km/h</small></div>
+          </div>
+        </div>
+
+        <div id="toast" class="toast" role="status">
+          <span class="toast-kicker">Spirit found</span>
+          <span class="toast-name" id="toastName">Whisper of the Grass</span>
+        </div>
+
+        <div id="boundary" class="boundary-note">The valley’s winds turn you gently home</div>
+      </div>
+
+      <!-- touch controls -->
+      <div id="touchControls" class="touch-controls hidden">
+        <div id="stickZone" class="stick-zone">
+          <div class="stick-base" id="stickBase"><div class="stick-knob" id="stickKnob"></div></div>
+        </div>
+        <div class="touch-buttons">
+          <button id="flapBtn" class="flight-btn" type="button">
+            <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M7 29c7-9 18-15 34-17-5 6-8 10-9 16-5-1-10-1-15 3-3 2-6 2-10-2Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M14 37c6-4 12-7 20-9" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" opacity=".65"/></svg>
+            <span>Flap</span>
+          </button>
+          <button id="diveBtn" class="flight-btn small" type="button">
+            <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M24 9v26m0 0-8-9m8 9 8-9" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>Dive</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- pause -->
+      <section id="pause" class="overlay modal hidden">
+        <div class="paper-card">
+          <p class="eyebrow small"><span>resting on the wind</span></p>
+          <h2>Paused</h2>
+          <p class="lede-sm">The valley waits for you.</p>
+          <div class="btn-row">
+            <button id="resumeBtn" class="btn primary" type="button">Return to the sky</button>
+            <button id="restartBtnPause" class="btn ghost" type="button">Start over</button>
+          </div>
+          <p class="footnote">esc to resume</p>
+        </div>
+      </section>
+
+      <!-- completion -->
+      <section id="complete" class="overlay modal hidden">
+        <div class="paper-card wide">
+          <p class="eyebrow small"><span>九つの風</span><i></i><span>all spirits home</span></p>
+          <h2>The valley remembers</h2>
+          <p class="lede-sm">
+            The Elder Tree opens like a held breath.<br />
+            Somewhere below, the grass is singing.
+          </p>
+          <div class="result-row">
+            <div><span class="result-label">flight time</span><span id="finalTime" class="result-value">00:00</span></div>
+            <div><span class="result-label">best</span><span id="bestTime" class="result-value">—</span></div>
+          </div>
+          <div class="btn-row">
+            <button id="restartBtn" class="btn primary" type="button">Fly again</button>
+            <button id="keepBtn" class="btn ghost" type="button">Keep exploring</button>
+          </div>
+        </div>
+      </section>
+
+      <div id="flash" class="flash" aria-hidden="true"></div>
+    </div>
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>
